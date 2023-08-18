@@ -10,7 +10,8 @@ BATCHID=$BATCHID
 CIEL_INSTANCE=${CIEL_INSTANCE:-main}
 # Artifact output directory
 ARTIFACT_OUT_DIR=${ARTIFACT_OUT_DIR}
-
+# Target branch
+TARGET_BRANCH=${TARGET_BRANCH:-stable}
 # The following variables can not be specified
 PACKAGES=()
 # Used to let the script know we are resuming
