@@ -14,7 +14,7 @@ CIEL_WORKSPACE_BASE=$HOME/build/ciel-ci
 # ABBS Tree location - should be checked out.
 ABBS_TREE_DIR=$ABBS_TREE_DIR
 # Branch
-ABBS_BRANCH=${ABBS_BRANCH:-bleeding-edge-nightly}
+TARGET_BRANCH=${TARGET_BRANCH:-stable}
 
 source common/utils.bash
 
@@ -47,8 +47,8 @@ pushd $ABBS_TREE_DIR
 if [ ! -d .git ] || ! git rev-parse --git-dir &>/dev/null ; then
 	bail "$ABBS_TREE_DIR is not an Git repository."
 fi
-if ! git branch -a | grep -q $ABBS_BRANCH ; then
-	bail "Specified branch $ABBS_BRANCH is not in the specified ABBS Tree."
+if ! git branch -a | grep -q $TARGET_BRANCH ; then
+	bail "Specified branch $TARGET_BRANCH is not in the specified ABBS Tree."
 fi
 popd
 
@@ -89,11 +89,11 @@ if [ -e $CIEL_WORKSPACE_DIR/TREE/.git ] ; then
 	if [ "$ciel_tree_remote_url" != "$specified_tree_remote_url" ] ; then
 		i "Replacing ABBS Tree checked out by Ciel to the specified one..."
 		rm -fr $CIEL_WORKSPACE_DIR/TREE
-		git clone $ABBS_TREE_DIR $CIEL_WORKSPACE_DIR/TREE -b $ABBS_BRANCH
+		git clone $ABBS_TREE_DIR $CIEL_WORKSPACE_DIR/TREE -b $TARGET_BRANCH
 	fi
 else
 	i "Checking out the ABBS Tree..."
-	git clone $ABBS_TREE_DIR $CIEL_WORKSPACE_DIR/TREE -b $ABBS_BRANCH
+	git clone $ABBS_TREE_DIR $CIEL_WORKSPACE_DIR/TREE -b $TARGET_BRANCH
 fi
 
 i "Adding instance..."
