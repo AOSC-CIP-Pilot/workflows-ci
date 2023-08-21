@@ -30,7 +30,7 @@ source common/utils.bash
 set -e
 set -o pipefail
 
-save_artifacts() {
+copy_artifacts() {
 	i "Copying artifacts..."
 	echo "$CIEL_WORKSPACE_DIR/OUTPUT-$TARGET_BRANCH"
 	ls "$CIEL_WORKSPACE_DIR/OUTPUT-$TARGET_BRANCH"
@@ -44,14 +44,15 @@ save_artifacts() {
 	i "Copying logs..."
 	cd $CIEL_WORKSPACE_DIR/ci-builds/$BATCHID
 	find -maxdepth 1 -type f -exec install -Dvm644 {} $ARTIFACT_OUT_DIR/logs/{} \;
-	
+}
+
+job_finish() {
 	i "Job finished successfully!"
 	i "Ciel workspace: $CIEL_WORKSPACE_DIR"
 	i "Batch ID: $BATCHID"
 	i "CI log directory: $CIEL_WORKSPACE_DIR/ci-builds/$BATCHID"
 	i "Artifact output directory: $ARTIFACT_OUT_DIR"
 	i "Exporting info..."
-	echo "ARTIFACT_DIR=$ARTIFACT_OUT_DIR" | tee -a "$GITHUB_OUTPUT"
 	echo "STATUS=$STATUS" | tee -a "$GITHUB_OUTPUT"
 
 	unset _rand _curpkg _pkglist CIEL_WORKSPACE_DIR RESUME PACKAGES TARGET_BRANCH statfile listfile
@@ -182,6 +183,9 @@ ln -sfv $ARTIFACT_OUT_DIR $CIEL_WORKSPACE_DIR/ci-builds/latest-out || bail "Can 
 touch $ARTIFACT_OUT_DIR/batchid || bail "Can not create files in the artifact output directory."
 echo $BATCHID | tee $ARTIFACT_OUT_DIR/batchid > /dev/null || bail "Can not write to the files in the artifact output directory."
 
+i "Setting artifact directory for Actions..."
+echo "ARTIFACT_DIR=$ARTIFACT_OUT_DIR" | tee -a "$GITHUB_OUTPUT"
+
 # Create list and status file
 mkdir -pv $CIEL_WORKSPACE_DIR/ci-builds/$BATCHID
 statfile="$CIEL_WORKSPACE_DIR/ci-builds/$BATCHID/status"
@@ -201,7 +205,7 @@ if [ ! $RESUME ] ; then
 	echo "${PACKAGES[@]}" | tee $listfile > /dev/null
 fi
 
-trap save_artifacts EXIT
+trap "job_finish" EXIT
 
 i "Entering $CIEL_WORKSPACE_DIR..."
 cd $CIEL_WORKSPACE_DIR
@@ -215,6 +219,7 @@ for i in ${PACKAGES[@]} ; do
 	safename=${i/\//_}
 	script -eqc "sudo LANG=C ciel build -i $CIEL_INSTANCE $i" $CIEL_WORKSPACE_DIR/ci-builds/$BATCHID/$safename.log
 	echo "::endgroup::"
+	copy_artifacts
 	if [ "$?" != "0" ] ; then
 		STATUS=fail
 		export LANG=$_LANG
